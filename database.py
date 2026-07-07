@@ -287,6 +287,14 @@ async def use_account(account_id, user_id):
             user_id, account_id)
 
 
+async def get_all_accounts_pool():
+    async with pool.acquire() as c:
+        return await c.fetch("SELECT * FROM accounts_pool ORDER BY id DESC")
+
+async def delete_account_pool(account_id):
+    async with pool.acquire() as c:
+        await c.execute("DELETE FROM accounts_pool WHERE id=$1", account_id)
+
 # ── gold pool ──────────────────────────────────────────────────────────────────
 
 async def add_gold_promo(promo, added_by):
@@ -304,6 +312,14 @@ async def use_gold(gold_id, user_id):
         await c.execute(
             "UPDATE gold_pool SET is_used=TRUE,used_at=NOW(),used_by=$1 WHERE id=$2",
             user_id, gold_id)
+
+async def get_all_gold_pool():
+    async with pool.acquire() as c:
+        return await c.fetch("SELECT * FROM gold_pool ORDER BY id DESC")
+
+async def delete_gold_pool(gold_id):
+    async with pool.acquire() as c:
+        await c.execute("DELETE FROM gold_pool WHERE id=$1", gold_id)
 
 
 # ── admins ─────────────────────────────────────────────────────────────────────

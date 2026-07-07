@@ -1063,3 +1063,68 @@ async def api_admin_remove(request: Request):
         return JSONResponse({"success": False, "error": "Нельзя удалить самого себя"})
     await db.remove_admin(int(tid))
     return JSONResponse({"success": True})
+
+
+# ===== PRIZE POOL MANAGEMENT =====
+
+@app.get("/api/admin/pool/accounts")
+async def api_admin_pool_accounts(request: Request):
+    await _require_admin(request)
+    rows = await db.get_all_accounts_pool()
+    return JSONResponse({"success": True, "accounts": [
+        {"id": r['id'], "email": r['email'], "password": r['password'],
+         "is_used": r['is_used'],
+         "added_at": r['added_at'].isoformat() if r.get('added_at') else None}
+        for r in rows
+    ]})
+
+@app.post("/api/admin/pool/accounts/add")
+async def api_admin_pool_accounts_add(request: Request):
+    tg_user, _ = await _require_admin(request)
+    body = await request.json()
+    email    = (body.get('email') or '').strip()
+    password = (body.get('password') or '').strip()
+    if not email or not password:
+        return JSONResponse({"success": False, "error": "email и password обязательны"})
+    await db.add_account(email, password, tg_user['id'])
+    return JSONResponse({"success": True})
+
+@app.post("/api/admin/pool/accounts/delete")
+async def api_admin_pool_accounts_delete(request: Request):
+    await _require_admin(request)
+    body = await request.json()
+    aid = body.get('id')
+    if not aid:
+        return JSONResponse({"success": False, "error": "id обязателен"})
+    await db.delete_account_pool(int(aid))
+    return JSONResponse({"success": True})
+
+@app.get("/api/admin/pool/gold")
+async def api_admin_pool_gold(request: Request):
+    await _require_admin(request)
+    rows = await db.get_all_gold_pool()
+    return JSONResponse({"success": True, "gold": [
+        {"id": r['id'], "promo_code": r['promo_code'], "is_used": r['is_used'],
+         "added_at": r['added_at'].isoformat() if r.get('added_at') else None}
+        for r in rows
+    ]})
+
+@app.post("/api/admin/pool/gold/add")
+async def api_admin_pool_gold_add(request: Request):
+    tg_user, _ = await _require_admin(request)
+    body = await request.json()
+    promo = (body.get('promo_code') or '').strip()
+    if not promo:
+        return JSONResponse({"success": False, "error": "promo_code обязателен"})
+    await db.add_gold_promo(promo, tg_user['id'])
+    return JSONResponse({"success": True})
+
+@app.post("/api/admin/pool/gold/delete")
+async def api_admin_pool_gold_delete(request: Request):
+    await _require_admin(request)
+    body = await request.json()
+    gid = body.get('id')
+    if not gid:
+        return JSONResponse({"success": False, "error": "id обязателен"})
+    await db.delete_gold_pool(int(gid))
+    return JSONResponse({"success": True})
